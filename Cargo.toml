@@ -31,7 +31,9 @@ message-encoding = "0.2.2"
 dirs = "6.0"
 
 [profile.release]
-strip = "debuginfo"
-opt-level = "z"
-lto = true
+opt-level = 3
+debug = false
+lto = "fat"
+strip = true
 codegen-units = 1
+incremental = false
