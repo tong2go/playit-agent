@@ -1,0 +1,49 @@
+name: Build musl x86_64
+
+on:
+  push:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust + MUSL
+        run: |
+          rustup update stable
+          rustup default stable
+          rustup target add x86_64-unknown-linux-musl
+          sudo apt-get update
+          sudo apt-get install -y musl-tools musl-dev
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build (max optimized static)
+        run: |
+          RUSTFLAGS="-C target-cpu=x86-64-v3 -C link-arg=-s" \
+          cargo build \
+            --release \
+            --target x86_64-unknown-linux-musl
+
+      - name: Strip (extra safety)
+        run: |
+          strip target/x86_64-unknown-linux-musl/release/playit-cli || true
+
+      - name: Prepare artifact
+        run: |
+          mkdir -p dist
+          cp target/x86_64-unknown-linux-musl/release/playit-cli \
+             dist/pumpkin-x86_64-unknown-linux-musl
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pumpkin-x86_64-unknown-linux-musl
+          path: dist/pumpkin-x86_64-unknown-linux-musl
+          compression-level: 9
